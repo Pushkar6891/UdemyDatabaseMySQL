@@ -1,0 +1,1085 @@
+Basic:
+
+Query Data
+Filter Data
+Sort Data
+Join Table
+Group By
+Subquery
+Union
+Managing Tables
+
+Relationships
+1. one to one
+2. one to many
+3. many to one
+4. many to many
+
+SQL = DDL + DML + DCL
+DDL (tables, views, triggers, stored procedures)
+DML (insert, update, delete)
+DCL (grant, revoke)
+
+How to eliminate duplicate records (distinct)
+How to filter data records (where)
+Logical 'and' 'or'
+< > = between
+IN OUT
+LIKE keyword % _ 
+Find second highest salary
+
+
+Between lowerIndex and HigherIndex
+select productCode, productName, buyPrice from products where buyPrice<=90 and buyPrice>=40;
+select productCode, productName, buyPrice from products where buyPrice between 90 and 40;
+select productCode, productName, buyPrice from products where buyPrice between 40 and 90;
+
+#First 10 rows
+select * from orders limit 10
+#Skip 2 records then pick 10 rows
+select * from orders limit 2,10
+#Order by
+select contactLastName, contactFirstName from customers order by contactLastName asc;
+select contactLastName, contactFirstName from customers order by contactLastName desc;
+select contactLastName, contactFirstName from customers where contactLastName='Young' order by contactLastName desc;
+
+#Alias for columns
+select concat(firstName , ' ', lastName) as EmployeeName from employees;
+select concat(firstName , ' ', lastName) as 'EmployeeName' from employees;
+select concat(firstName , ' ', lastName)'EmployeeName' from employees;
+
+#Inner Join
+select
+   productCode,
+   productName,
+   textDescription 
+from
+   products as T1 
+   inner join
+      productLines as T2 
+      on T1.productLine = T2.productLine
+
+#Inner Join
+select
+   orderDate,
+   quantityOrdered 
+from
+   orders 
+   inner join
+      orderdetails 
+      on orders.orderNumber = orderdetails.orderNumber
+
+#Inner Join (without join keyword we assume join is inner join) (326)
+select
+   orderDate,
+   quantityOrdered 
+from
+   orders 
+   join
+      orderdetails 
+      on orders.orderNumber = orderdetails.orderNumber
+
+#Left Join (350)
+select
+   c.customerNumber,
+   c.customerName,
+   o.orderNumber 
+from
+   customers c 
+   left join
+      orders o 
+      on c.customerNumber = o.customerNumber;
+
+#24 records
+      select
+   c.customerNumber,
+   c.customerName,
+   o.orderNumber 
+from
+   customers c 
+   left join
+      orders o 
+      on c.customerNumber = o.customerNumber where orderNumber is null;
+
+#Right Join (326)
+select
+   c.customerNumber,
+   c.customerName,
+   o.orderNumber 
+from
+   customers c 
+   right join
+      orders o 
+      on c.customerNumber = o.customerNumber;
+
+#Self Join
+select
+   concat(m.lastName, ',', m.firstName) as 'Manager',
+   concat(e.lastName, ',', e.firstName) as 'Direct Report' 
+from
+   employees as e 
+   join
+      employees as m 
+      on m.employeeNumber = e.reportsto 
+order by
+   manager;
+
+#Group By (use aggregate function like sum min max count avg)
+
+Both query will return same result
+select status from orders group by status;
+select distinct status from orders;
+
+#Using Aggregate Function
+select status,count(*) from orders group by status;
+select distinct status from orders;
+select count(*) from orders;
+
+select status, sum(quantityOrdered * priceEach) as amount
+from orders join orderdetails on
+orders.orderNumber=orderdetails.ordernumber
+group by status;
+
+select orderNumber, sum(quantityOrdered * priceEach) as total
+from orderdetails 
+group by orderNumber
+having total>10000;
+
+#Having (to filter data after grouping)
+having (applies condition to each group of rows) vs where clause(applies condition to each individual row)
+
+select ordernumber,
+sum(quantityOrdered) as itemCount,
+sum(priceEach) as total
+from orderdetails
+group by ordernumber
+having total>1000
+and itemCount>600;
+
+select a.ordernumber,
+sum(priceEach) as total,
+status from orderdetails as a join orders as b
+on b.ordernumber = a.ordernumber
+group by ordernumber
+having b.status='shipped'
+and total>1500;
+
+#Subquery and Outer Query
+select customerNumber, checkNumber, amount from payments
+where amount =
+(select max(amount) from payments);
+
+select customerNumber, checkNumber, amount from payments
+where amount <
+(select max(amount) from payments);
+
+select customerName from customers
+where customerNumber NOT IN
+(select distinct customerNumber from payments);
+
+#Union
+1. No of columns in select must be equals
+2. No of columns must have same data type
+3. Union will delete duplicate records
+4. Union All retain duplicate records
+5. Union All is faster than union
+
+#Union Eliminate duplicate records
+select customerName as id, contactLastName as name from customers
+union
+select employeeNumber as id, firstName as name from employees;
+
+#Union with order by
+select customerName as id, contactLastName as name from customers
+union
+select employeeNumber as id, firstName as name from employees
+order by name,id;
+
+
+DDL
+Create
+create table if not exists tasks(
+	task_id INT(11) NOT NULL AUTO_INCREMENT,
+    subject VARCHAR(45) DEFAULT NULL,
+    start_date DATE DEFAULT NULL,
+    end_date DATE DEFAULT NULL,
+    description VARCHAR(200) DEFAULT NULL,
+    primary key (task_id)
+);
+
+select * from tasks;
+
+#Insert 1 record
+insert into tasks(subject, start_date, end_date, description);
+
+#Insert 3 records
+insert into tasks(subject, start_date, end_date, description)
+values ('MySQL','2016-12-12','2017-01-01','Learning MySQL 2'),
+('MySQL','2016-12-12','2017-01-01','Learning MySQL 3'),
+('MySQL','2016-12-12','2017-01-01','Learning MySQL 4');
+values ('MySQL','2016-12-12','2017-01-01','Learning MySQL') 
+
+#Insert Sequentially
+insert into tasks values(7, 'MySQL', '2016-12-12', '2017-01-01', 'MySQL Learning 5');
+
+#Select values then insert
+#create table tasks_1 like tasks;
+#select * from tasks_1;
+
+#FORMAT#insert into table_1 select c1,c2 from table_2;
+#insert into tasks_1 select * from tasks;
+
+#select * from tasks_1;
+
+## Entering duplicate key Problem
+#insert into tasks values (4,'test','2016-12-12','2017-01-01','test');
+
+## Entering duplicate key Solution
+#insert into tasks values (4,'test','2016-12-12','2017-01-01','test')
+#on duplicate key update task_id=task_id+1;
+
+select * from tasks;
+
+#Describe
+desc customers
+describe customers
+
+#Storage Engine MySQL
+MyISAM
+InnoDB
+Memory Engine
+CSV Engine
+Merge Engine
+Archive Engine
+Blackhole Engine
+Federated Engine
+
+
+ACID properties
+Atomicity
+Consistency
+Isolation 
+Durability
+
+
+#Update
+#select firstName, lastName, email from employees where employeeNumber = 1056;
+#select * from employees where employeeNumber = 1056;
+#update employees set firstName='Maryam' where employeeNumber = 1056;
+
+#Update multiple columns
+
+Difference between in,=,is 
+
+#Delete
+select * from tasks
+delete from tasks where task_id=7
+SET SQL_SAFE_UPDATES=0;
+SET FOREIGN_KEY_CHECKS=0;
+delete e,o from employees e, offices o where e.officeCode=o.officeCode and o.officeCode=2;
+select * from employees e where e.officeCode=2;
+
+Truncate vs Delete vs Drop
+#Drop
+drop table tasks_1;
+drop table if exists tasks_1;
+
+
+Basic Problems
+1. Find List of Shippers?
+select * from shippers;
+2. Find certain fields (categoryName and description) from Categories?
+select categoryName, description from categories
+3. Find FirstName, LastName and HireDate of all employees with the title of sales Representative
+select firstName, lastName, HireDate from employees where title='Sales Representative'
+4. Find FirstName, LastName and HireDate of all employees with the title of sales Representative and are in US
+select firstName, lastName, HireDate from employees where title='Sales Representative' and Country='USA'
+5. Find all orders by a specific employee ID
+#select * from orders;
+select OrderID, OrderDate from orders where EmployeeId=5;
+6. Find SupplierID, contactName, contactTitle for those suppliers whose ContactTitle is not Marketing Manager
+#24 records
+#select SupplierID, contactName, contactTitle from suppliers where contactTitle <> 'Marketing Manager';
+#select SupplierID, contactName, contactTitle from suppliers where contactTitle != 'Marketing Manager';
+#5 records
+#select SupplierID, contactName, contactTitle from suppliers where contactTitle = 'Marketing Manager';
+#select * from suppliers;
+#select count(*) from suppliers;
+#select ContactName, count(*) from suppliers group by ContactTitle;
+7. Products with "queso" in ProductName
+#select * from products;
+select * from products where productName like '%queso%'
+8. Using Orders table which shows OrderId, CustomerId and ShipCountry for orders where the ShipCountry is either France or Belgium
+select OrderId, CustomerId, ShipCountry from orders where shipCountry='France' or shipCountry='Belgium';
+select OrderId, CustomerId, ShipCountry from orders where shipCountry in ('France','Belgium');
+9. Orders shipping to any country in Latin America
+select OrderId, CustomerId, ShipCountry from orders where shipCountry in ('Brazil','Mexico','Argentina','Venezuela');
+10. Find all employees in order of age
+#select * from employees;
+#select firstName, lastName, title, birthDate from employees;
+#select firstName, lastName, title, birthDate from employees order by birthDate;
+11.Showing only the Date with a DateTime field
+select firstName, lastName, title, Date(birthDate) as empBirthDate from employees order by empBirthDate;
+12.Extract data from firstName and lastName into a new column fullName
+#select firstName, lastName from employees;
+select firstName, lastName, concat(firstName, ' ' , lastName) as fullName from employees;
+13. Order Details amount per line item
+select orderId, productId, unitPrice, quantity, (unitPrice * quantity) as FullPrice from orderdetails;
+select orderId, productId, unitPrice, quantity, (unitPrice * quantity) FullPrice from orderdetails;
+14. How many customers we have in customers table?
+#select * from customers;
+select count(*) from customers;
+15. When was the first Order / Find date of first Order?
+#select * from orders;
+select OrderDate from orders order by OrderDate limit 1;
+select min(OrderDate) from orders;
+When was the latest order / Find date of last Order?
+select OrderDate from orders order by OrderDate desc limit 1;
+When was the latest order / Find date of first 5 Order?
+select OrderDate from orders order by OrderDate limit 5;
+When was the latest order / Find date of last 5 Order?
+select OrderDate from orders order by OrderDate desc limit 5;
+16. Countries where there are customers?
+#select * from customers;
+select distinct country from customers order by country;
+Count of total number of countries where there are customers?
+select count(distinct country) from customers;
+17. Count different types of values of ContactTitles by group?
+#select contactTitle, count(*) as totalContactTitle from customers;
+#select contactTitle, count(*) as totalContactTitle from customers group by contactTitle;
+select contactTitle, count(*) as totalContactTitle from customers group by contactTitle order by totalContactTitle desc;
+18. Products with their associated supplier names
+select
+   p.productId as ProductId,
+   p.productName as ProductName,
+   s.companyName as SupplierName 
+from
+   products p 
+   inner join
+      suppliers s 
+      on p.supplierId = s.supplierId 
+order by
+   p.productId;
+19. Find Orders that were placed and Shipper who shipped them
+select orderId, orderDate, companyName as Shipper from Orders o join Shippers s on o.shipvia = s.shipperId;
+#In above query show only those records whose orderId is less than 10300
+select
+   orderId,
+   orderDate,
+   companyName as Shipper 
+from
+   Orders o 
+   join
+      Shippers s 
+      on o.shipvia = s.shipperId 
+where
+   orderId < 10300 
+order by
+   orderId;
+20. Find categories and display total number of products in each category
+select
+   c.categoryName,
+   count(*) as TotalProducts 
+from
+   Products p 
+   join
+      Categories c 
+      on c.categoryId = p.categoryId 
+group by
+   categoryName 
+order by
+   TotalProducts desc;
+21. Total customers per country or per city
+select
+   country,
+   city,
+   count(*) as TotalCustomer 
+from
+   customers 
+group by
+   country,
+   city 
+order by
+   totalCustomer desc;
+22. Products that need Reordering
+select
+   productId,
+   productName,
+   unitsInStock,
+   reorderLevel 
+from
+   products 
+where
+   UnitsInStock < ReorderLevel 
+order by
+   productId;
+23. Products that need reordering, continued
+select
+   productId,
+   productName,
+   unitsInStock,
+   unitsOnOrder,
+   reorderLevel,
+   discontinued 
+from
+   products 
+where
+   UnitsInStock + UnitsOnOrder < ReorderLevel 
+   and Discontinued = 0 
+order by
+   productId;
+24. Customer List by Region / List of Customers by Region/ include CustomerId, CompanyName, Region
+(Null values should come at last, can be using # symbol similar to problem in Anthem Deloitte, masking of values by #)
+
+select
+   customerId,
+   companyName,
+   Region 
+from
+   Customers 
+Order by
+( 
+   case
+      when
+         Region is null 
+      then
+         1 
+      else
+         0 
+   end
+), Region, CustomerId;
+
+25. High Freight Charges
+#select * from orders;
+select
+   shipCountry,
+   avg(Freight) as AverageFreight 
+from
+   Orders 
+group by
+   ShipCountry 
+order by
+   AverageFreight desc limit 3;
+
+26. High Freight Charges - 2015
+#select * from orders;
+select
+   shipCountry,
+   avg(freight) as AverageFreight 
+from
+   orders 
+where
+   year(orderdate) = 2015 
+group by
+   shipCountry 
+order by
+   AverageFreight desc limit 3;
+
+27. High Freight Charges - in last year/in last 12 months
+#select * from orders;
+select
+   shipCountry,
+   avg(Freight) as AverageFreight 
+from
+   orders 
+where
+   OrderDate >= Date_Add((
+   select
+      max(orderdate) 
+   from
+      orders), interval - 12 month ) 
+   group by
+      shipCountry 
+   order by
+      AverageFreight desc limit 3;
+
+28. Inventory List
+
+select
+   e.employeeId,
+   lastName,
+   o.orderId,
+   p.productName,
+   od.quantity 
+from
+   employees e 
+   join
+      orders o 
+      on e.employeeId = o.employeeId 
+   join
+      orderDetails od 
+      on od.orderId = o.orderId 
+   join
+      products p 
+      on p.productId = od.productId 
+order by
+   o.orderId,
+   p.productID;
+
+29. Customers with no orders / customer order id is null
+
+#select * from customers;
+#select * from orders;
+#select * from customers;
+#select * from orders;
+select
+   c.customerId,
+   o.orderId 
+from
+   customers c 
+   left join
+      orders o 
+      on o.customerId = c.customerId 
+where
+   orderId is null;
+
+30. Customers with no orders for Employee ID 4
+
+select
+   c.customerId,
+   o.customerId 
+from
+   customers c 
+   left join
+      orders o 
+      on c.customerId = o.customerId 
+      and o.employeeId 
+      and o.employeeId = 4 
+where
+   o.customerId is null;
+
+31. High Value Customers
+
+select
+   customers.customerId,
+   customers.companyName,
+   orders.orderID,
+   sum(quantity * unitPrice) as totalAmount 
+from
+   customers 
+   join
+      orders 
+      on orders.customerId = customers.customerId 
+   join
+      orderDetails 
+      on orders.orderId = orderDetails.orderId 
+where
+   orderDate >= '20160101' 
+   and orderDate < '20170101' 
+group by
+   customers.customerId,
+   customers.companyName,
+   orders.orderID 
+having
+   totalAmount > 10000 
+order by
+   totalAmount desc;
+
+32. High Value Customers - total orders
+
+
+select
+   customers.customerId,
+   customers.companyName,
+   sum(quantity * unitPrice) as totalAmount 
+from
+   customers 
+   join
+      orders 
+      on orders.customerId = customers.customerId 
+   join
+      orderDetails 
+      on orders.orderId = orderDetails.orderId 
+where
+   orderDate >= '20160101' 
+   and orderDate < '20170101' 
+group by
+   customers.customerId,
+   customers.companyName
+having
+   totalAmount > 15000 
+order by
+   totalAmount desc;
+
+33. Month-end orders
+
+select
+   employeeId,
+   orderId,
+   orderDate 
+from
+   orders 
+where
+   Date(orderDate) = Last_day(orderDate) 
+order by
+   employeeId,
+   orderId;
+
+34. Orders with many line items
+
+select
+   * 
+from
+   orders o 
+   join
+      orderDetails od using (orderId);
+
+select
+   o.orderId,
+   count(*) as totalOrderDetails 
+from
+   orders o 
+   join
+      orderDetails od 
+      on o.orderId = od.orderId 
+group by
+   o.orderId 
+order by
+   totalOrderDetails desc;
+
+
+select
+   o.orderId,
+   count(*) as totalOrderDetails 
+from
+   orders o 
+   join
+      orderDetails od 
+      on o.orderId = od.orderId 
+group by
+   o.orderId 
+order by
+   totalOrderDetails desc
+   limit 10;
+
+35. Orders - accidental double entry
+
+select
+   orderId 
+from
+   orderDetails 
+where
+   quantity >= 60;
+
+
+select
+   orderId,
+   count(*) 
+from
+   orderDetails od 
+where
+   quantity >= 60 
+group by
+   orderId,
+   quantity;
+
+
+select
+   orderId,
+   count(*) 
+from
+   orderDetails od 
+where
+   quantity >= 60 
+group by
+   orderId,
+   quantity 
+having
+   count(*) > 1;
+
+
+36. Late Orders
+
+select
+   orderId,
+   orderDate,
+   requiredDate,
+   shippedDate 
+from
+   orders 
+where
+   shippedDate >= requiredDate;
+
+37. Late orders - which employees?
+
+select
+   o.employeeId,
+   e.LastName,
+   count(orderId) as NumberOfOrders 
+from
+   orders o 
+   join
+      employees e 
+where
+   o.employeeId = e.employeeId 
+   and shippedDate >= requiredDate 
+group by
+   o.employeeId 
+order by
+   numberOfOrders desc;
+
+select
+   o.employeeId,
+   e.LastName,
+   count(orderId) as NumberOfOrders 
+from
+   orders o 
+   join
+      employees e 
+where
+   o.employeeId = e.employeeId 
+   and shippedDate >= requiredDate 
+group by
+   o.employeeId 
+order by
+   numberOfOrders desc, employeeId asc;
+
+38. Late Orders vs Total Orders
+
+#select count(*) from orders o group by o.employeeId;
+#Problem:
+select
+   o.employeeId,
+   e.LastName,
+   (
+      select
+         count(*) 
+      from
+         orders o 
+      group by
+         o.employeeId
+   )
+,
+   count(orderId) as NumberOfOrders 
+from
+   orders o 
+   join
+      employees e 
+where
+   o.employeeId = e.employeeId 
+   and shippedDate >= requiredDate 
+group by
+   o.employeeId 
+order by
+   numberOfOrders desc,
+   employeeId asc;
+
+#Solution:
+
+select
+   o.employeeId as myEmployeeId,
+   e.LastName,
+   (
+      select
+         count(*) 
+      from
+         orders ord 
+      where
+         ord.employeeId = myEmployeeId 
+   )
+   as AllOrders,
+   count(orderId) as NumberOfOrders 
+from
+   orders o 
+   join
+      employees e 
+where
+   o.employeeId = e.employeeId 
+   and shippedDate >= requiredDate 
+group by
+   o.employeeId 
+order by
+   numberOfOrders desc,
+   myEmployeeId asc;
+
+39. Late orders vs Total Orders - Missing Employee
+
+select
+   o.employeeId,
+   e.LastName,
+   count(*) as totalNumberOfOrders 
+from
+   orders o 
+   join
+      employees e 
+      on o.employeeId = e.employeeId 
+group by
+   employeeId;
+
+
+
+
+select
+   employeeId,
+   fullOrders.lastName,
+   fullOrders.totalNumberOfOrders,
+   lateOrders.NumberOfLateOrders 
+from
+   (
+      select
+         o.employeeId,
+         e.LastName,
+         count(*) as totalNumberOfOrders 
+      from
+         orders o 
+         join
+            employees e 
+            on o.employeeId = e.employeeId 
+      group by
+         employeeId 
+   )
+   as fullOrders 
+   left outer join
+      (
+         select
+            o.employeeId as myEmployeeId,
+            e.LastName,
+            (
+               select
+                  count(*) 
+               from
+                  orders ord 
+               where
+                  ord.employeeId = myEmployeeId 
+            )
+            as AllOrders,
+            count(orderId) as NumberOfLateOrders 
+         from
+            orders o 
+            join
+               employees e 
+         where
+            o.employeeId = e.employeeId 
+            and shippedDate >= requiredDate 
+         group by
+            o.employeeId 
+         order by
+            numberOfLateOrders desc,
+            myEmployeeId asc 
+      )
+      as lateOrders 
+      on fullOrders.EmployeeId = myEmployeeId 
+order by
+   employeeId;
+
+
+
+40. Late Orders vs Total Orders - fix null
+
+
+select
+   employeeId,
+   fullOrders.lastName,
+   fullOrders.totalNumberOfOrders,
+   case 
+	when lateOrders.NumberOfLateOrders is null then 0
+    else lateOrders.NumberOfLateOrders
+    end as NumberOfLateOrders
+from
+   (
+      select
+         o.employeeId,
+         e.LastName,
+         count(*) as totalNumberOfOrders 
+      from
+         orders o 
+         join
+            employees e 
+            on o.employeeId = e.employeeId 
+      group by
+         employeeId 
+   )
+   as fullOrders 
+   left outer join
+      (
+         select
+            o.employeeId as myEmployeeId,
+            e.LastName,
+            (
+               select
+                  count(*) 
+               from
+                  orders ord 
+               where
+                  ord.employeeId = myEmployeeId 
+            )
+            as AllOrders,
+            count(orderId) as NumberOfLateOrders 
+         from
+            orders o 
+            join
+               employees e 
+         where
+            o.employeeId = e.employeeId 
+            and shippedDate >= requiredDate 
+         group by
+            o.employeeId 
+         order by
+            numberOfLateOrders desc,
+            myEmployeeId asc 
+      )
+      as lateOrders 
+      on fullOrders.EmployeeId = myEmployeeId 
+order by
+   employeeId;
+
+
+41. Late Orders vs Total Orders - Percentage
+
+select
+   employeeId,
+   fullOrders.lastName,
+   fullOrders.totalNumberOfOrders,
+   case
+      when
+         lateOrders.NumberOfLateOrders is null 
+      then
+         0 
+      else
+         lateOrders.NumberOfLateOrders 
+   end
+   as NumberOfLateOrders, 
+   case
+      when
+         (
+            NumberOfLateOrders / FullOrders.totalNumberOfOrders
+         )
+         is null 
+      then
+         0 
+      else
+(NumberOfLateOrders / FullOrders.totalNumberOfOrders) 
+   end
+   as Percentage 
+from
+   (
+      select
+         o.employeeId,
+         e.LastName,
+         count(*) as totalNumberOfOrders 
+      from
+         orders o 
+         join
+            employees e 
+            on o.employeeId = e.employeeId 
+      group by
+         employeeId 
+   )
+   as fullOrders 
+   left outer join
+      (
+         select
+            o.employeeId as myEmployeeId,
+            e.LastName,
+            (
+               select
+                  count(*) 
+               from
+                  orders ord 
+               where
+                  ord.employeeId = myEmployeeId 
+            )
+            as AllOrders,
+            count(orderId) as NumberOfLateOrders 
+         from
+            orders o 
+            join
+               employees e 
+         where
+            o.employeeId = e.employeeId 
+            and shippedDate >= requiredDate 
+         group by
+            o.employeeId 
+         order by
+            numberOfLateOrders desc,
+            myEmployeeId asc 
+      )
+      as lateOrders 
+      on fullOrders.EmployeeId = myEmployeeId 
+order by
+   employeeId;
+
+
+
+42. Late Orders vs Total Orders - Fix Decimal
+
+select
+   employeeId,
+   fullOrders.lastName,
+   fullOrders.totalNumberOfOrders,
+   case
+      when
+         lateOrders.NumberOfLateOrders is null 
+      then
+         0 
+      else
+         lateOrders.NumberOfLateOrders 
+   end
+   as NumberOfLateOrders, 
+   case
+      when
+         round((NumberOfLateOrders / FullOrders.totalNumberOfOrders), 2) is null 
+      then
+         0 
+      else
+         round((NumberOfLateOrders / FullOrders.totalNumberOfOrders), 2) 
+   end
+   as Percentage 
+from
+   (
+      select
+         o.employeeId,
+         e.LastName,
+         count(*) as totalNumberOfOrders 
+      from
+         orders o 
+         join
+            employees e 
+            on o.employeeId = e.employeeId 
+      group by
+         employeeId 
+   )
+   as fullOrders 
+   left outer join
+      (
+         select
+            o.employeeId as myEmployeeId,
+            e.LastName,
+            (
+               select
+                  count(*) 
+               from
+                  orders ord 
+               where
+                  ord.employeeId = myEmployeeId 
+            )
+            as AllOrders,
+            count(orderId) as NumberOfLateOrders 
+         from
+            orders o 
+            join
+               employees e 
+         where
+            o.employeeId = e.employeeId 
+            and shippedDate >= requiredDate 
+         group by
+            o.employeeId 
+         order by
+            numberOfLateOrders desc,
+            myEmployeeId asc 
+      )
+      as lateOrders 
+      on fullOrders.EmployeeId = myEmployeeId 
+order by
+   employeeId;
+
+
+
+
+
+
+
+
+
+
+
